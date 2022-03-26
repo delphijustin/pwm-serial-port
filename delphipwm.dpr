@@ -15,10 +15,6 @@ uses
   windows,
   Classes;
 
-procedure pwmAbort;
-begin
-
-end;
 procedure SetParameters(lpCom:pansichar);stdcall;
 var hkPorts:hkey;
 portcount,cbName,cbDev:dword;
