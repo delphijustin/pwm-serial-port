@@ -15,7 +15,7 @@ uses
   windows,
   Classes;
 
-procedure SetParameters(lpCom:pansichar);stdcall;
+procedure SetParameters(lpCom:pansichar;var dutyCycle:byte);stdcall;
 var hkPorts:hkey;
 portcount,cbName,cbDev:dword;
 I,J:integer;
@@ -26,11 +26,23 @@ if paramstr(1)='/?'then begin
 writeln(
 'This tool allows you to send pulse width modulation through the serial port.');
 writeln;
-writeln('Usage: ',extractfilename(paramstr(0)),' [comport]');
-writeln('[comport]  Serial port to use');
+writeln('Usage: ',extractfilename(paramstr(0)),' [comport] [dutyCycle]');
+writeln('[comport]    Serial port to use');
+writeln('[dutyCycle]  Duty cycle must be 1 though 9 where 1 is 90% and 9 is 10%');
 exitprocess(0);
 end;
-if paramcount=1 then strplcopy(@lpcom[4],pchar(Paramstr(1)),16)else begin
+if paramcount>0then strplcopy(@lpcom[4],pchar(Paramstr(1)),16)else begin
+case strtointdef(paramstr(2),0)of
+1:dutyCycle:=0;
+2:dutyCycle:=$80;
+3:dutycycle:=$c0;
+4:dutycycle:=$e0;
+5:dutycycle:=$f0;
+6:dutycycle:=$f8;
+7:dutycycle:=$fc;
+8:dutycycle:=$fe;
+else dutycycle:=$ff;
+end;
 if regopenkeyex(HKEY_LOCAL_MACHINE,
 'SYSTEM\CurrentControlSet\Control\COM Name Arbiter\Devices',0,key_read,hkports)
 =error_success then begin

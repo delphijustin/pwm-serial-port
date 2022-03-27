@@ -14,29 +14,46 @@ uses
   SysUtils,
   windows,
   Classes;
-procedure SetParameters(lpCom:pansichar);stdcall;
+
+procedure SetParameters(lpCom:pansichar;var dutyCycle,locked:byte);stdcall;
 var hkPorts:hkey;
-portcount,cbName:dword;
-I:integer;
+portcount,cbName,cbDev:dword;
+I,J:integer;
 comport:array[0..15]of char;
+comdev:array[0..max_path]of char;
 begin
 if paramstr(1)='/?'then begin
 writeln(
 'This tool allows you to send pulse width modulation through the serial port.');
 writeln;
-writeln('Usage: ',extractfilename(paramstr(0)),' [comport]');
-writeln('[comport]  Serial port to use');
+writeln('Usage: ',extractfilename(paramstr(0)),' [comport] [dutyCycle] [/L]');
+writeln('[comport]    Serial port to use');
+writeln('[dutyCycle]  Duty cycle must be 1 though 9 where 1 is 90% and 9 is 10%');
+writeln('[/L]         Ignore keyboard');
 exitprocess(0);
 end;
-if paramcount=1 then strplcopy(@lpcom[4],pchar(Paramstr(1)),16)else begin
+if paramcount>0then strplcopy(@lpcom[4],pchar(Paramstr(1)),16)else begin
+case strtointdef(paramstr(2),0)of
+1:dutyCycle:=0;
+2:dutyCycle:=$80;
+3:dutycycle:=$c0;
+4:dutycycle:=$e0;
+5:dutycycle:=$f0;
+6:dutycycle:=$f8;
+7:dutycycle:=$fc;
+8:dutycycle:=$fe;
+else dutycycle:=$ff;
+end;
+locked:=ord(pos(' /L',uppercase(getcommandline))>0);
 if regopenkeyex(HKEY_LOCAL_MACHINE,
 'SYSTEM\CurrentControlSet\Control\COM Name Arbiter\Devices',0,key_read,hkports)
 =error_success then begin
 // get serial ports from registry
 regqueryinfokey(hkports,nil,nil,nil,nil,nil,nil,@portcount,nil,nil,nil,nil);
 writeln('Avalible COM Ports:');
-for I:=0to portcount-1 do begin cbName:=16;regenumvalue(hkports,i,comport,cbname,
-nil,nil,nil,nil);writeln(comport);comport[0]:=#0;
+for I:=0to portcount-1 do begin cbName:=16;cbdev:=max_path+1;
+regenumvalue(hkports,i,comport,cbname,nil,nil,@comdev,@cbdev);write(comport);
+for J:=0to 7do write(' ');write(comdev);comdev[0]:=#0;comport[0]:=#0;writeln;
 end;
 regclosekey(hkports);
 end;
@@ -45,5 +62,6 @@ write('Enter COM Port: \\.\');readln(comport);if strlen(comport)=0then
 exitprocess(maxdword);strlcopy(@lpcom[4],comport,16);
 end;
 end;
+exports SetParameters;
 begin
 end.

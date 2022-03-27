@@ -109,7 +109,7 @@ start:
         mov [pSetParameters],eax
         cmp eax,0
         je delpError
-        invoke pSetParameters,ComPort
+        invoke pSetParameters,ComPort,msg
         invoke GetConsoleWindow  ;get console window handle
         mov [hwcon],EAX
         invoke GetStdHandle, STD_OUTPUT_HANDLE
@@ -126,8 +126,8 @@ COM:
         invoke SetCommState,[hComm],DCB
 
 
-        MOV AL, 0xFF
-        MOV [msg], AL
+       ; MOV AL, 0xFF SetParameters Function does this
+        ;MOV [msg], AL
         xor esi,esi
 
 main:
