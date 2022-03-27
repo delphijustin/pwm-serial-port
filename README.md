@@ -14,3 +14,4 @@ Subcooledheatpump's link: http://www.youtube.com/subcooledheatpump
 Project homepage https://delphijustin.biz/serial-port-pwm/
 
 More information see the other readfile(README.TXT)
+To see command-line parameters type SerialPWMWindows.EXE /? at the command-prompt
