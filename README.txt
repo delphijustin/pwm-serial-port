@@ -148,7 +148,7 @@ System requirements:
 
 Operating system : Windows NT 4.0 or newer (using delphijustin's version it will need to be Windows 2000 or newer)
 Free Memory: 2 MB (recommended, uses only ~480K on Windows NT 4.0, 1 MB+ for Windows XP)
-Free Disk Space: 15 KB (.EXE Program = 4 KB, .ASM Source code = 6 KB, .TXT Readme file = 5 KB)
+Free Disk Space: 79 KB (.DLL File = ~64 KB,.EXE Program = 4 KB, .ASM Source code = 6 KB, .TXT Readme file = 5 KB)
 CPU: 486 25 MHz minimum for NT 4.0
 Intel Pentium II 300 MHz or AMD K6-3 400 MHz or better highly recommended
 
