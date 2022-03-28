@@ -8,6 +8,9 @@ ORG 0x402000
 hDelphiPWM DD ?
 sDelphiPWM DB 'delphipwm.dll',0
 sSetParameters DB 'SetParameters',0
+spwmAbort DB 'pwmAbort',0
+pwmAbort DD ?
+errorProc DD ?
 pSetParameters DD ?
 ConTitle   DB 'Serial Port Pulse Width Modulator for Windows NT',0
 hComm      DD ?
@@ -15,10 +18,10 @@ numofb     DD ?
 inhandle   DD ?
 outhandle  DD ?
 numwritten DD ?
-ComPort    DB "\\.\0123456789ABCDEF",0;16 byte port name buffer delphipwm.dll sets i
+ComPort    DB "\\.\0123456789ABCDEF",0;16 byte port name buffer delphipwm.dll sets it
 msg        DB ?
 hwcon      DD ?
-_error TCHAR 'Could not Open COM port.Make sure the serial port is correctly installed and configured.Close any programs that use the serial port and try again',0
+_error DB 'Could not Open COM port.Make sure the serial port is correctly installed and configured.Close any programs that use the serial port and try again',0
 _delphiError TCHAR 'Could not load "delphipwm.dll".',0
 print:
 msg1:                                                                               ;add ,13,10,0 to the end of the string so the console is not a mess
@@ -61,9 +64,10 @@ DB "Programmed by: Subcooledheatpump improved by delphijustin                   
 DB "http://www.youtube.com/subcooledheatpump                                     ",13,10,0
 DB "This program is Absolutely Free!                                             ",13,10,0
 DB "Everyone is Free to distribute and modify                                    ",13,10,0
+DB "Use Key 0 to stop PWM                                                        ",13,10,0
+pauseStr: DB "PWM has been stoped, press Space to start it again                               ",13,10,0
 
-
-stringDCB: DB 'baud=115200 parity=N data=8 stop=1',0
+stringDCB: DB '                                                                  ',0
 
 size = $-string1
 
@@ -109,29 +113,41 @@ start:
         mov [pSetParameters],eax
         cmp eax,0
         je delpError
-        invoke pSetParameters,ComPort,msg
+        invoke GetProcAddress,[hDelphiPWM],spwmAbort
+        mov [pwmAbort],eax
+        cmp eax,0
+        je delpError
+        invoke pSetParameters,ComPort,stringDCB,msg
         invoke GetConsoleWindow  ;get console window handle
         mov [hwcon],EAX
         invoke GetStdHandle, STD_OUTPUT_HANDLE
         MOV [outhandle],EAX
-        invoke WriteConsole,[outhandle],string1,800,numwritten,0
+        invoke WriteConsole,[outhandle],string1,880,numwritten,0
 
 COM:
+        mov [errorProc],0
         invoke CreateFile,ComPort,GENERIC_READ or GENERIC_WRITE,NULL,NULL,OPEN_EXISTING,NULL,NULL
         MOV [hComm], EAX
         CMP EAX, INVALID_HANDLE_VALUE
         JE L10
-
+        mov [errorProc],1
         invoke BuildCommDCBA,stringDCB,DCB
+        cmp eax,0
+        je L10
+        mov [errorProc],2
         invoke SetCommState,[hComm],DCB
-
+        cmp eax,0
+        je L10
 
        ; MOV AL, 0xFF SetParameters Function does this
         ;MOV [msg], AL
         xor esi,esi
 
 main:
+        mov [errorProc],3
         invoke WriteFile, [hComm], msg,1, numofb, NULL
+        cmp eax,0
+        je L10
         INC ESI
         CMP ESI, 0xFF
         JE key
@@ -146,6 +162,9 @@ key:
         je consolefg
         jmp main
 consolefg:
+        invoke GetAsyncKeyState, 0x30
+        cmp ah,0x80
+        je turnoff
         invoke GetAsyncKeyState, 0x31
         CMP AH,0x80
         JE L1
@@ -236,11 +255,26 @@ invoke MessageBox,NULL,_delphiError,NULL,MB_ICONERROR+MB_OK
 invoke GetLastError
 invoke ExitProcess,eax
 L10:
- invoke MessageBox,NULL,_error,NULL,MB_ICONERROR+MB_OK
- invoke GetLastError
- invoke ExitProcess,eax
+invoke GetLastError
+cmp [errorProc],0
+je BadPort
+invoke pwmAbort,[errorProc],eax,NULL
+BadPort:
+invoke pwmAbort,[errorProc],eax,_error
+turnoff:
+invoke CloseHandle,[hComm]
+invoke WriteConsole,[outhandle],pauseStr,80,numwritten,0
+paused:
+invoke GetAsyncKeyState,0x20
+cmp ah,0x80
+je COM
+jmp paused
+; invoke MessageBox,NULL,_error,NULL,MB_ICONERROR+MB_OK
+; invoke GetLastError
+; invoke ExitProcess,eax
 Close:
 invoke CloseHandle,[outhandle]
 invoke CloseHandle, [hComm]
 invoke ExitProcess, 0
+
 .end start
